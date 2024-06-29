@@ -1,39 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useWeather } from '../contexts/WeatherContext';
 import { getCurrentWeather, getForecast } from '../services/weatherService';
 
-export const useWeatherApi = (lat, lon) => {
-  const [weatherData, setWeatherData] = useState(null);
+export function useWeatherApi() {
+  const { state, dispatch } = useWeather();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    async function fetchWeatherData() {
       try {
+        setLoading(true);
         const [currentWeather, forecast] = await Promise.all([
-          getCurrentWeather(lat, lon),
-          getForecast(lat, lon)
+          getCurrentWeather(state.location.lat, state.location.lon, state.units),
+          getForecast(state.location.lat, state.location.lon, state.units)
         ]);
-        setWeatherData({ current: currentWeather.data, forecast: forecast.data });
-        // 로컬 스토리지에 데이터 캐싱
-        localStorage.setItem('weatherData', JSON.stringify({
-          data: { current: currentWeather.data, forecast: forecast.data },
-          timestamp: Date.now()
-        }));
+        dispatch({ type: 'SET_WEATHER_DATA', payload: { current: currentWeather, forecast } });
+        setError(null);
       } catch (err) {
-        setError(err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
-    };
-
-    const cachedData = JSON.parse(localStorage.getItem('weatherData'));
-    if (cachedData && Date.now() - cachedData.timestamp < 30 * 60 * 1000) { // 30분 캐시
-      setWeatherData(cachedData.data);
-      setLoading(false);
-    } else {
-      fetchData();
     }
-  }, [lat, lon]);
 
-  return { weatherData, loading, error };
-};
+    fetchWeatherData();
+  }, [state.location, state.units, dispatch]);
+
+  return { loading, error };
+}

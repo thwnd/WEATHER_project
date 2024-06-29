@@ -1,24 +1,49 @@
 import React from 'react';
+import styled from 'styled-components';
 import { useWeather } from '../contexts/WeatherContext';
-import { useWeatherApi } from '../hooks/useWeatherApi';
+import { WiThermometer, WiHumidity, WiStrongWind } from 'react-icons/wi';
 
-const CurrentWeather = () => {
+const WeatherCard = styled.div`
+  background-color: #f5f5f5;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+`;
+
+const WeatherInfo = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+`;
+
+const WeatherIcon = styled.span`
+  font-size: 24px;
+  margin-right: 10px;
+`;
+
+function CurrentWeather() {
   const { state } = useWeather();
-  const { weatherData, loading, error } = useWeatherApi(state.location.lat, state.location.lon);
+  const current = state.weatherData?.current;
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  if (!weatherData) return null;
-
-  const { temp, description } = weatherData.current.main;
+  if (!current) return <div>Loading...</div>;
 
   return (
-    <div className="current-weather">
+    <WeatherCard>
       <h2>Current Weather</h2>
-      <p>Temperature: {temp}°C</p>
-      <p>Description: {description}</p>
-    </div>
+      <WeatherInfo>
+        <WeatherIcon><WiThermometer /></WeatherIcon>
+        Temperature: {current.main.temp}°{state.units === 'metric' ? 'C' : 'F'}
+      </WeatherInfo>
+      <WeatherInfo>
+        <WeatherIcon><WiHumidity /></WeatherIcon>
+        Humidity: {current.main.humidity}%
+      </WeatherInfo>
+      <WeatherInfo>
+        <WeatherIcon><WiStrongWind /></WeatherIcon>
+        Wind Speed: {current.wind.speed} {state.units === 'metric' ? 'm/s' : 'mph'}
+      </WeatherInfo>
+    </WeatherCard>
   );
-};
+}
 
 export default CurrentWeather;
